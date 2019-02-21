@@ -2,15 +2,15 @@
 Abstract contract which allows trading to some external (contract) party
 
 Mostly copied from OpenSea https://github.com/ProjectOpenSea/opensea-creatures/blob/master/contracts/TradeableERC721Token.sol
-but has some improvements
 
 */
 pragma solidity ^0.4.25;
 
-import 'openzeppelin-solidity/contracts/token/ERC721/ERC721Token.sol';
-import 'openzeppelin-solidity/contracts/ownership/Ownable.sol';
+import "./Strings.sol";
+import "openzeppelin-solidity/contracts/token/ERC721/ERC721Token.sol";
+import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
-import './Strings.sol';
+
 
 
 contract OwnableDelegateProxy { }
@@ -27,6 +27,7 @@ contract TradeableERC721Token is ERC721Token, Ownable {
     using SafeMath for uint256;
     using Strings for string;
 
+    uint256 burnedCounter = 0;
     address proxyRegistryAddress;
     string baseURI;
 
@@ -51,16 +52,24 @@ contract TradeableERC721Token is ERC721Token, Ownable {
    */
     function approveBulk(address _to, uint256[] _tokenIds) public {
         for (uint256 i = 0; i < _tokenIds.length; i++) {
-           approve(_to, _tokenIds[i]);
+            approve(_to, _tokenIds[i]);
         }
     }
 
     /**
-      * @dev calculates the next token ID based on totalSupply
+      * @dev calculates the next token ID based on totalSupply and the burned offset
       * @return uint256 for the next token ID
       */
     function _getNextTokenId() private view returns (uint256) {
-        return totalSupply().add(1);
+        return totalSupply().add(1).add(burnedCounter);
+    }
+
+    /**
+      * @dev extends default burn functionality with the the burned counter
+      */
+    function _burn(address _owner, uint256 _tokenId) internal {
+        super._burn(_owner, _tokenId);
+        burnedCounter++;
     }
 
     function baseTokenURI() public view returns (string) {
